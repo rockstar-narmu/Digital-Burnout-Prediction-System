@@ -21,6 +21,12 @@ export default function IntensityChart({ summary }) {
           summary.mouseIntensity,
           summary.scrollIntensity,
         ],
+        backgroundColor: [
+          "#ff9f40", // Keystroke - Orange
+          "#4bc0c0", // Mouse - Teal
+          "#9966ff", // Scroll - Purple
+        ],
+        borderWidth: 1,
       },
     ],
   };

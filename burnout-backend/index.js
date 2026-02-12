@@ -52,14 +52,11 @@ app.get("/summary/:date", async (req, res) => {
 
 app.get("/live-summary", async (req, res) => {
   try {
-    const summary = await generateLiveSummary();
-    if (!summary) {
-      return res.json({ message: "No activity recorded yet today" });
-    }
-    res.json(summary);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to generate live summary" });
+    const date = req.query.date; // yyyy-mm-dd
+    const summary = await generateLiveSummary(date);
+    res.json(summary || { message: "No summary" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
   }
 });
 

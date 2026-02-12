@@ -171,6 +171,8 @@ function categorizeActivity(text = "") {
     "skribbl",
     "microsoft solitaire collection",
     "sky",
+    "heartopia",
+    "2048",
   ];
 
   if (gamingKeywords.some((k) => t.includes(k))) return "gaming";

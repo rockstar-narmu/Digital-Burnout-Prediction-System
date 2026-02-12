@@ -1,12 +1,12 @@
 const ActivityLog = require("../models/ActivityLog");
 
-async function generateLiveSummary() {
-  const today = new Date().toISOString().split("T")[0];
+async function generateLiveSummary(dateString) {
+  const date = dateString || new Date().toISOString().split("T")[0];
 
   const logs = await ActivityLog.find({
     timestamp: {
-      $gte: new Date(`${today}T00:00:00`),
-      $lte: new Date(),
+      $gte: new Date(`${date}T00:00:00`),
+      $lte: new Date(`${date}T23:59:59`),
     },
   });
 
@@ -47,7 +47,7 @@ async function generateLiveSummary() {
   });
 
   return {
-    date: today,
+    date,
     totalScreenTime,
     workTime,
     leisureTime,

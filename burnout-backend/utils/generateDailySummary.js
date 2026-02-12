@@ -1,6 +1,82 @@
 const ActivityLog = require("../models/ActivityLog");
 const DailySummary = require("../models/DailySummary");
 
+// --- Burnout Label Function ---
+function getBurnoutLevel(s) {
+  let score = 0;
+
+  // ==============================
+  // 🔴 EXTREME OVERRIDE PROTECTION
+  // ==============================
+
+  const extremeScreen = s.totalScreenTime > 43200; // > 12 hours
+  const extremeSwitching = s.taskSwitches > 1000;
+
+  if (extremeScreen && extremeSwitching) {
+    return "high";
+  }
+
+  if (extremeScreen || extremeSwitching) {
+    score += 3; // strong penalty
+  }
+
+  // ==============================
+  // 1️⃣ Duration Overload
+  // ==============================
+
+  if (s.totalScreenTime > 28800)
+    score += 3; // > 8 hrs
+  else if (s.totalScreenTime > 21600)
+    score += 2; // > 6 hrs
+  else if (s.totalScreenTime > 14400) score += 1; // > 4 hrs
+
+  const workRatio = s.workTime / s.totalScreenTime;
+  if (workRatio > 0.8) score += 2;
+  else if (workRatio > 0.65) score += 1;
+
+  if (s.lateNightUsage > 3600) score += 2;
+  else if (s.lateNightUsage > 1200) score += 1;
+
+  // ==============================
+  // 2️⃣ Cognitive Fragmentation
+  // ==============================
+
+  if (s.taskSwitches > 600) score += 3;
+  else if (s.taskSwitches > 350) score += 2;
+  else if (s.taskSwitches > 200) score += 1;
+
+  if (s.continuousSessionAvg > 3600) score += 2;
+  else if (s.continuousSessionAvg > 2400) score += 1;
+
+  // ==============================
+  // 3️⃣ Behavioral Intensity
+  // ==============================
+
+  if (s.keystrokeIntensity > 10 || s.keystrokeIntensity < 2) score += 2;
+  else if (s.keystrokeIntensity > 8 || s.keystrokeIntensity < 4) score += 1;
+
+  if (s.mouseIntensity > 200 || s.mouseIntensity < 15) score += 2;
+  else if (s.mouseIntensity > 120 || s.mouseIntensity < 30) score += 1;
+
+  if (s.scrollIntensity > 15) score += 2;
+  else if (s.scrollIntensity > 8) score += 1;
+
+  // ==============================
+  // 4️⃣ Recovery Pattern
+  // ==============================
+
+  if (s.breakFrequency < 1) score += 2;
+  else if (s.breakFrequency < 2) score += 1;
+
+  // ==============================
+  // FINAL CLASSIFICATION
+  // ==============================
+
+  if (score >= 10) return "high";
+  if (score >= 5) return "medium";
+  return "low";
+}
+
 async function generateDailySummary(date) {
   const logs = await ActivityLog.find({
     timestamp: {
@@ -46,7 +122,7 @@ async function generateDailySummary(date) {
     }
   });
 
-  const summary = new DailySummary({
+  const summaryData = {
     date,
     totalScreenTime,
     continuousSessionAvg: totalScreenTime / taskSwitches,
@@ -67,9 +143,14 @@ async function generateDailySummary(date) {
     avgScrollDistance: totalScrollDistance / logs.length,
 
     lateNightUsage: 0,
-  });
+  };
 
+  // 🔥 Auto-generate burnout label
+  summaryData.burnoutLevel = getBurnoutLevel(summaryData);
+
+  const summary = new DailySummary(summaryData);
   await summary.save();
+
   console.log("Daily Summary Saved:", summary);
 }
 

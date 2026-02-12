@@ -14,6 +14,13 @@ export default function CategoryChart({ summary }) {
           summary.socialTime,
           summary.gamingTime,
         ],
+        backgroundColor: [
+          "#ff6384", // Work - Pinkish Red
+          "#36a2eb", // Leisure - Light Blue
+          "#ffcd56", // Social - Yellow
+          "#4bc0c0", // Gaming - Teal
+        ],
+        borderWidth: 1,
       },
     ],
   };

@@ -23,6 +23,11 @@ const DailySummarySchema = new mongoose.Schema({
 
   lateNightUsage: Number,
 
+  burnoutLevel: {
+    type: String, // "low" | "medium" | "high"
+    default: null,
+  },
+
   createdAt: {
     type: Date,
     default: Date.now,

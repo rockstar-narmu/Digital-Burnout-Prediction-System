@@ -1,6 +1,8 @@
 const ActivityLog = require("../models/ActivityLog");
 const DailySummary = require("../models/DailySummary");
 
+const axios = require("axios");
+
 // --- Burnout Label Function ---
 function getBurnoutLevel(s) {
   let score = 0;
@@ -125,7 +127,8 @@ async function generateDailySummary(date) {
   const summaryData = {
     date,
     totalScreenTime,
-    continuousSessionAvg: totalScreenTime / taskSwitches,
+    continuousSessionAvg:
+      taskSwitches > 0 ? totalScreenTime / taskSwitches : totalScreenTime,
     longestSession: Math.max(40, totalScreenTime / 4),
     breakFrequency: Math.floor(totalScreenTime / 3600),
 
@@ -146,12 +149,42 @@ async function generateDailySummary(date) {
   };
 
   // 🔥 Auto-generate burnout label
-  summaryData.burnoutLevel = getBurnoutLevel(summaryData);
+  //summaryData.burnoutLevel = getBurnoutLevel(summaryData);
 
   const summary = new DailySummary(summaryData);
-  await summary.save();
+  await summary.save(); // ALWAYS SAVE
 
-  console.log("Daily Summary Saved:", summary);
+  const prediction = await getMLPrediction(summaryData);
+
+  if (prediction) {
+    summary.burnoutLevel = prediction;
+    await summary.save();
+  }
+
+  console.log("Daily Summary Saved with ML label:", summary);
+}
+
+async function getMLPrediction(summaryData) {
+  try {
+    const response = await axios.post("http://localhost:8000/predict", {
+      totalScreenTime: summaryData.totalScreenTime,
+      workTime: summaryData.workTime,
+      leisureTime: summaryData.leisureTime,
+      socialTime: summaryData.socialTime,
+      gamingTime: summaryData.gamingTime,
+      taskSwitches: summaryData.taskSwitches,
+      keystrokeIntensity: summaryData.keystrokeIntensity,
+      mouseIntensity: summaryData.mouseIntensity,
+      scrollIntensity: summaryData.scrollIntensity,
+      lateNightUsage: summaryData.lateNightUsage,
+      breakFrequency: summaryData.breakFrequency,
+    });
+
+    return response.data.burnoutLevel;
+  } catch (error) {
+    console.error("ML API Error:", error.message);
+    return null;
+  }
 }
 
 module.exports = generateDailySummary;

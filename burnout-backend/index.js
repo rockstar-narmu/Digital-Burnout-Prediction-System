@@ -16,6 +16,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const cron = require("node-cron");
+
 app.get("/ping", (req, res) => {
   res.json({ message: "Backend is running" });
 });
@@ -62,4 +64,21 @@ app.get("/live-summary", async (req, res) => {
 
 app.listen(5000, () => {
   console.log("Server started on port 5000");
+});
+
+// Run every day at 12:05 AM
+cron.schedule("5 0 * * *", async () => {
+  console.log("Running scheduled daily summary...");
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const formattedDate = yesterday.toISOString().split("T")[0];
+
+  try {
+    await generateDailySummary(formattedDate);
+    console.log("Daily summary generated for:", formattedDate);
+  } catch (error) {
+    console.error("Scheduled summary error:", error.message);
+  }
 });

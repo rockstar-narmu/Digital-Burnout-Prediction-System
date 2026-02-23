@@ -60,6 +60,38 @@ scores = cross_val_score(model, X, y, cv=5)
 print("Cross Validation Scores:", scores)
 print("Average Accuracy:", scores.mean())
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+# Get feature importance
+importances = model.feature_importances_
+feature_names = X.columns
+
+# Create dataframe
+feature_importance_df = pd.DataFrame({
+    "Feature": feature_names,
+    "Importance": importances
+})
+
+# Sort by importance
+feature_importance_df = feature_importance_df.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print("\nFeature Importance:\n")
+print(feature_importance_df)
+
+# Plot
+plt.figure()
+plt.bar(feature_importance_df["Feature"], feature_importance_df["Importance"])
+plt.xticks(rotation=90)
+plt.title("Feature Importance")
+plt.tight_layout()
+plt.show()
+
+
 
 # ==============================
 # 7️⃣ Evaluate
